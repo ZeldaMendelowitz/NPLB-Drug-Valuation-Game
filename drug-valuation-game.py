@@ -149,7 +149,7 @@ r_and_d = html.Div(className="sixC",
 
 ############################# START THE APP ####################################
 app = Dash(__name__)
-#server = app.server
+server = app.server
 
 
 
