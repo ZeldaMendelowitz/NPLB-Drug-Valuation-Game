@@ -13,7 +13,7 @@ dropdown_style = {
     'background-color': "#d0d2d3",
     'color': '#354a5d',
     'height': '30px',
-    'width': '120px',
+    'width': '125px',
     'font-size': '20px',
     'font-color': '#fafbfb'
 }
@@ -36,7 +36,7 @@ free_market_price = html.Div(className="quarterC",
                   ])
 YoR_market_price = html.Div(className="quarterC",
                   children=[
-                      html.P("Years of Revenue at Market Price"),
+                      html.P("Years at Market Price"),
                       dcc.Dropdown(
                           options= year_options,
                           value=9,
@@ -47,7 +47,7 @@ YoR_market_price = html.Div(className="quarterC",
 
 cmc_nego_price = html.Div(className="quarterC",
                   children=[
-                      html.P("CMC Negotiated Drug Price ($)"),
+                      html.P("Negotiated Drug Price ($)"),
                       dcc.Dropdown(
                           options= negotiated_drug_prices,
                           value=100,
@@ -57,7 +57,7 @@ cmc_nego_price = html.Div(className="quarterC",
                   ])
 YoR_nego_price = html.Div(className="quarterC",
                   children=[
-                      html.P("Years of Revenue at Negotiated Price"),
+                      html.P("Years at Negotiated Price"),
                       dcc.Dropdown(
                           options= year_options,
                           value=9,
@@ -125,19 +125,19 @@ fda_PoS = html.Div(className="fifthC",
 
 
 
-############ START THE APP #####################
+############################# START THE APP ####################################
 app = Dash(__name__)
-server = app.server
+#server = app.server
 
 
 
 app.layout = html.Div([
     ######## HEADER
-    html.H1("No Patient Left Behind - Drug Valuation Game", className="header"),
-    html.Hr(),
     html.Div(children=[
+        html.H1("No Patient Left Behind - Drug Valuation Game", className="header"),
+        html.Hr(),
         html.H3("Senior Fellow: Zelda Mendelowitz"),
-        html.H3("Jr Fellow: Thanaa Makdsi, ..."),
+        html.H3("Jr Fellow: Thanaa Makdsi, "),
         html.H2("Drug: KT-474 (small molecule)"),
         html.H3("Indictation: Hidradenitis Suppurativa (HS)")
     ]),
@@ -202,6 +202,7 @@ app.layout = html.Div([
 
 
 #### NET PRESENT VALUE FUNCTION 
+## calculate the net present value of a revenue stream with discount rate
 def npv(revenue, rate):
     n = len(revenue)
     discount_factor = 1/(1+rate)
@@ -211,11 +212,16 @@ def npv(revenue, rate):
         sum += revenue[i]*(discount_factor**(i+1))
     return sum
 
+## Format currencies with dollar sign and commas
 def format_currency(amount):
     return '${:,.0f}'.format(amount)
 
-###### CALL BACKS 
 
+
+################################################################################
+
+
+###### CALL BACK
 ### FREE MARKET NPV
 @app.callback(
     Output("free-market-npv", "children"),
@@ -250,6 +256,7 @@ def calculate_npv(market,
     start_pop = 348382799
     pos = (ph1/100)*(ph2/100)*(ph3/100)*(fda/100)
 
+    ## population computation
     populations = [start_pop*(1+growth)**n for n in range(yor_market + yor_nego)]
     hs_pop = np.multiply(populations, prevalence_rate)
     hs_mod_severe = np.multiply(hs_pop, mod_to_severe_rate)
@@ -257,22 +264,26 @@ def calculate_npv(market,
     treated_pop = np.multiply(hs_mod_severe, market_share)
     final_pop = np.multiply(treated_pop, (1-discontinuation_rate))
 
+    ## free market and adjusted price lists
     fmp = [market*(1 + drug_price_growth)**n for n in range(yor_market)]
     neg_prices = [nego*(1+drug_price_growth)**n for n in range(yor_nego)]
-    
     prices = fmp + neg_prices
     free_market_prices = [market*(1 + drug_price_growth)**n for n in range(yor_market + yor_nego)]
 
+    ## free market vs adjusted revenues
     unadjusted_revenue_IRA = np.multiply(final_pop, prices)
     adjusted_revenue_IRA = [0]*years_to_start + list(np.multiply(unadjusted_revenue_IRA, pos))
-
     unadjusted_revenue_FM = np.multiply(final_pop, free_market_prices)
     adjusted_revenue_FM = [0]*years_to_start + list(np.multiply(unadjusted_revenue_FM, pos))
 
+    ## collect net present values and format correctly
     npvs = [round(npv(adjusted_revenue_FM, discount_rate/100)),
             round(npv(adjusted_revenue_IRA, discount_rate/100))]
-
     return [format_currency(x) for x in npvs]
+
+
+
+################################################################################
 
 
 if __name__ == '__main__':
