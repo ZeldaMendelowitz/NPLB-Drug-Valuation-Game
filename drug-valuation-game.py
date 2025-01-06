@@ -24,9 +24,9 @@ negotiated_drug_prices = [1,10,100,1000,2500,5000,10000,20000,40000,60000]
 discount_rate_options = [10]
 
 ## IRA predefines 
-free_market_price = html.Div(className="quarterC",
+free_market_price = html.Div(className="fifthC",
                   children=[
-                      html.P("Free Market Drug Price ($)"),
+                      html.P("Free Market Annual Price ($)"),
                       dcc.Dropdown(
                           options= [50000, 60000, 77568, 80000],
                           value=77568,
@@ -34,7 +34,7 @@ free_market_price = html.Div(className="quarterC",
                           style = dropdown_style
                     )
                   ])
-YoR_market_price = html.Div(className="quarterC",
+YoR_market_price = html.Div(className="fifthC",
                   children=[
                       html.P("Years at Market Price"),
                       dcc.Dropdown(
@@ -45,9 +45,9 @@ YoR_market_price = html.Div(className="quarterC",
                     )
                   ])
 
-cmc_nego_price = html.Div(className="quarterC",
+cmc_nego_price = html.Div(className="fifthC",
                   children=[
-                      html.P("Negotiated Drug Price ($)"),
+                      html.P("Negotiated Annual Price ($)"),
                       dcc.Dropdown(
                           options= negotiated_drug_prices,
                           value=100,
@@ -55,13 +55,24 @@ cmc_nego_price = html.Div(className="quarterC",
                           style = dropdown_style
                     )
                   ])
-YoR_nego_price = html.Div(className="quarterC",
+YoR_nego_price = html.Div(className="fifthC",
                   children=[
                       html.P("Years at Negotiated Price"),
                       dcc.Dropdown(
                           options= year_options,
                           value=9,
                           id="yor-nego-price",
+                          style = dropdown_style
+                    )
+                  ])
+
+years_to_launch = html.Div(className="fifthC",
+                  children=[
+                      html.P("Years to Launch"),
+                      dcc.Dropdown(
+                          options= year_options,
+                          value=4,
+                          id="years-to-launch",
                           style = dropdown_style
                     )
                   ])
@@ -138,7 +149,7 @@ r_and_d = html.Div(className="sixC",
 
 ############################# START THE APP ####################################
 app = Dash(__name__)
-server = app.server
+#server = app.server
 
 
 
@@ -167,7 +178,8 @@ app.layout = html.Div([
                                                         free_market_price,
                                                         YoR_market_price,
                                                         cmc_nego_price,
-                                                        YoR_nego_price
+                                                        YoR_nego_price,
+                                                        years_to_launch
                                                     ])
                                        ])
                           ]),
@@ -242,6 +254,7 @@ def format_currency(amount):
     Input("yor-market-price", "value"),
     Input("nego-drug-price", "value"),
     Input("yor-nego-price", "value"),
+    Input("years-to-launch", "value"),
     Input("discount-rate", "value"),
     Input("ph1-pos", "value"),
     Input("ph2-pos", "value"),
@@ -253,6 +266,7 @@ def calculate_npv(market,
                   yor_market,
                   nego,
                   yor_nego,
+                  launch,
                   discount_rate, 
                   ph1,
                   ph2,
@@ -261,7 +275,6 @@ def calculate_npv(market,
                   rd):
     
     ### Fixed inputs
-    years_to_start = 4
     growth = 0.007
     drug_price_growth = 0.01
     prevalence_rate = 0.01
@@ -287,9 +300,9 @@ def calculate_npv(market,
 
     ## free market vs adjusted revenues
     unadjusted_revenue_IRA = np.multiply(final_pop, prices)
-    adjusted_revenue_IRA = [0]*years_to_start + list(np.multiply(unadjusted_revenue_IRA, pos))
+    adjusted_revenue_IRA = [0]*launch + list(np.multiply(unadjusted_revenue_IRA, pos))
     unadjusted_revenue_FM = np.multiply(final_pop, free_market_prices)
-    adjusted_revenue_FM = [0]*years_to_start + list(np.multiply(unadjusted_revenue_FM, pos))
+    adjusted_revenue_FM = [0]*launch + list(np.multiply(unadjusted_revenue_FM, pos))
 
     ## collect net present values and format correctly
     npvs = [round(npv(adjusted_revenue_FM, discount_rate/100)) - costs,
