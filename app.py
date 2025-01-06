@@ -127,7 +127,7 @@ fda_PoS = html.Div(className="fifthC",
 
 ############ START THE APP #####################
 app = Dash(__name__)
-# server = app.server
+server = app.server
 
 
 
