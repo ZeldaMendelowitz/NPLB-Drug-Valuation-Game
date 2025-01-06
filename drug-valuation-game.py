@@ -28,7 +28,7 @@ free_market_price = html.Div(className="quarterC",
                   children=[
                       html.P("Free Market Drug Price ($)"),
                       dcc.Dropdown(
-                          options= [77568],
+                          options= [50000, 60000, 77568, 80000],
                           value=77568,
                           id="market-drug-price",
                           style = dropdown_style
@@ -66,18 +66,18 @@ YoR_nego_price = html.Div(className="quarterC",
                     )
                   ])
 
-discount_rate = html.Div(className="fifthC",
+discount_rate = html.Div(className="sixC",
                   children=[
                       html.P("Discount Rate (%)"),
                       dcc.Dropdown(
-                          options= [10],
+                          options= [8, 10, 12],
                           value=10,
                           id="discount-rate",
                           style = dropdown_style
                     )
                   ])
 
-phase1_PoS = html.Div(className="fifthC",
+phase1_PoS = html.Div(className="sixC",
                   children=[
                       html.P("Ph.1 PoS (%)"),
                       dcc.Dropdown(
@@ -88,7 +88,7 @@ phase1_PoS = html.Div(className="fifthC",
                     )
                   ])
 
-phase2_PoS = html.Div(className="fifthC",
+phase2_PoS = html.Div(className="sixC",
                   children=[
                       html.P("Ph.2 PoS (%)"),
                       dcc.Dropdown(
@@ -99,7 +99,7 @@ phase2_PoS = html.Div(className="fifthC",
                     )
                   ])
 
-phase3_PoS = html.Div(className="fifthC",
+phase3_PoS = html.Div(className="sixC",
                   children=[
                       html.P("Ph.3 PoS (%)"),
                       dcc.Dropdown(
@@ -110,13 +110,24 @@ phase3_PoS = html.Div(className="fifthC",
                     )
                   ])
 
-fda_PoS = html.Div(className="fifthC",
+fda_PoS = html.Div(className="sixC",
                   children=[
                       html.P("FDA Approval PoS (%)"),
                       dcc.Dropdown(
                           options= [10*x for x in range(11)],
                           value=80,
                           id="fda-pos",
+                          style = dropdown_style
+                    )
+                  ])
+
+r_and_d = html.Div(className="sixC",
+                  children=[
+                      html.P("R&D Costs ($ Millions)"),
+                      dcc.Dropdown(
+                          options= [0, 750, 1000, 1500, 2000],
+                          value=1000,
+                          id="rd-costs",
                           style = dropdown_style
                     )
                   ])
@@ -171,7 +182,8 @@ app.layout = html.Div([
                                                         phase1_PoS,
                                                         phase2_PoS,
                                                         phase3_PoS,
-                                                        fda_PoS
+                                                        fda_PoS,
+                                                        r_and_d
                                                     ])
                                        ])
                           ])        
@@ -234,7 +246,8 @@ def format_currency(amount):
     Input("ph1-pos", "value"),
     Input("ph2-pos", "value"),
     Input("ph3-pos", "value"),
-    Input("fda-pos", "value")
+    Input("fda-pos", "value"),
+    Input("rd-costs", "value")
 )
 def calculate_npv(market,
                   yor_market,
@@ -244,7 +257,8 @@ def calculate_npv(market,
                   ph1,
                   ph2,
                   ph3,
-                  fda):
+                  fda,
+                  rd):
     
     ### Fixed inputs
     years_to_start = 4
@@ -255,6 +269,7 @@ def calculate_npv(market,
     discontinuation_rate = 0.25
     start_pop = 348382799
     pos = (ph1/100)*(ph2/100)*(ph3/100)*(fda/100)
+    costs = 1000000*rd
 
     ## population computation
     populations = [start_pop*(1+growth)**n for n in range(yor_market + yor_nego)]
@@ -277,8 +292,8 @@ def calculate_npv(market,
     adjusted_revenue_FM = [0]*years_to_start + list(np.multiply(unadjusted_revenue_FM, pos))
 
     ## collect net present values and format correctly
-    npvs = [round(npv(adjusted_revenue_FM, discount_rate/100)),
-            round(npv(adjusted_revenue_IRA, discount_rate/100))]
+    npvs = [round(npv(adjusted_revenue_FM, discount_rate/100)) - costs,
+            round(npv(adjusted_revenue_IRA, discount_rate/100)) - costs]
     return [format_currency(x) for x in npvs]
 
 
